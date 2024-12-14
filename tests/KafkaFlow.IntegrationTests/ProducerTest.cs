@@ -7,34 +7,47 @@ using KafkaFlow.IntegrationTests.Core.Producers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace KafkaFlow.IntegrationTests
+namespace KafkaFlow.IntegrationTests;
+
+[TestClass]
+public class ProducerTest
 {
-    [TestClass]
-    public class ProducerTest
+    private readonly Fixture _fixture = new();
+
+    private IServiceProvider _provider;
+
+    [TestInitialize]
+    public void Setup()
     {
-        private readonly Fixture _fixture = new();
+        _provider = Bootstrapper.GetServiceProvider();
+        MessageStorage.Clear();
+    }
 
-        private IServiceProvider _provider;
+    [TestMethod]
+    public async Task ProduceNullKeyTest()
+    {
+        // Arrange
+        var producer = _provider.GetRequiredService<IMessageProducer<GzipProducer>>();
+        var message = _fixture.Create<byte[]>();
 
-        [TestInitialize]
-        public void Setup()
-        {
-            _provider = Bootstrapper.GetServiceProvider();
-            MessageStorage.Clear();
-        }
+        // Act
+        await producer.ProduceAsync(null, message);
 
-        [TestMethod]
-        public async Task ProduceNullKeyTest()
-        {
-            // Arrange
-            var producer = _provider.GetRequiredService<IMessageProducer<GzipProducer>>();
-            var message = _fixture.Create<byte[]>();
+        // Assert
+        await MessageStorage.AssertMessageAsync(message);
+    }
 
-            // Act
-            await producer.ProduceAsync(null, message);
+    [TestMethod]
+    public async Task ProduceNullMessageTest()
+    {
+        // Arrange
+        var producer = _provider.GetRequiredService<IMessageProducer<NullProducer>>();
+        var key = Guid.NewGuid().ToString();
 
-            // Assert
-            await MessageStorage.AssertMessageAsync(message);
-        }
+        // Act
+        await producer.ProduceAsync(key, Array.Empty<byte>());
+
+        // Assert
+        await MessageStorage.AssertNullMessageAsync();
     }
 }

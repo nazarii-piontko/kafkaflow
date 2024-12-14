@@ -2,18 +2,17 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace KafkaFlow.Consumers
+namespace KafkaFlow.Consumers;
+
+internal interface IConsumerWorker : IWorker, IDisposable
 {
-    internal interface IConsumerWorker : IWorker, IDisposable
-    {
-        CancellationToken StopCancellationToken { get; }
+    CancellationToken StopCancellationToken { get; }
 
-        IDependencyResolver WorkerDependencyResolver { get; }
+    IDependencyResolver WorkerDependencyResolver { get; }
 
-        ValueTask EnqueueAsync(IMessageContext context, CancellationToken stopCancellationToken);
+    ValueTask EnqueueAsync(IMessageContext context);
 
-        Task StartAsync();
+    Task StartAsync(CancellationToken stopCancellationToken);
 
-        Task StopAsync();
-    }
+    Task StopAsync();
 }

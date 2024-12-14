@@ -4,35 +4,34 @@ using Confluent.SchemaRegistry;
 using Google.Protobuf;
 using Google.Protobuf.Reflection;
 
-namespace KafkaFlow.Serializer.SchemaRegistry
+namespace KafkaFlow.Serializer.SchemaRegistry;
+
+internal class ConfluentProtobufTypeNameResolver : IConfluentProtobufTypeNameResolver
 {
-    internal class ConfluentProtobufTypeNameResolver : IConfluentProtobufTypeNameResolver
+    private readonly ISchemaRegistryClient _client;
+
+    public ConfluentProtobufTypeNameResolver(ISchemaRegistryClient client)
     {
-        private readonly ISchemaRegistryClient _client;
+        _client = client;
+    }
 
-        public ConfluentProtobufTypeNameResolver(ISchemaRegistryClient client)
+    public async Task<string> ResolveAsync(int id)
+    {
+        var schemaString = (await _client.GetSchemaAsync(id, "serialized")).SchemaString;
+
+        var protoFields = FileDescriptorProto.Parser.ParseFrom(ByteString.FromBase64(schemaString));
+
+        return BuildTypeName(protoFields);
+    }
+
+    private static string BuildTypeName(FileDescriptorProto protoFields)
+    {
+        var package = protoFields.Package;
+        if (string.IsNullOrEmpty(package) && !string.IsNullOrEmpty(protoFields.Options?.CsharpNamespace))
         {
-            _client = client;
+            package = protoFields.Options.CsharpNamespace;
         }
 
-        public async Task<string> ResolveAsync(int id)
-        {
-            var schemaString = (await _client.GetSchemaAsync(id, "serialized")).SchemaString;
-
-            var protoFields = FileDescriptorProto.Parser.ParseFrom(ByteString.FromBase64(schemaString));
-
-            return BuildTypeName(protoFields);
-        }
-
-        private static string BuildTypeName(FileDescriptorProto protoFields)
-        {
-            var package = protoFields.Package;
-            if (string.IsNullOrEmpty(package) && !string.IsNullOrEmpty(protoFields.Options?.CsharpNamespace))
-            {
-                package = protoFields.Options.CsharpNamespace;
-            }
-
-            return $"{package}.{protoFields.MessageType.FirstOrDefault()?.Name}";
-        }
+        return $"{package}.{protoFields.MessageType.FirstOrDefault()?.Name}";
     }
 }

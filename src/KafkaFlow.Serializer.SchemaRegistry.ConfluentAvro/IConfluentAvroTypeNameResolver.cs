@@ -1,7 +1,6 @@
-namespace KafkaFlow.Serializer.SchemaRegistry
+namespace KafkaFlow.Serializer.SchemaRegistry;
+
+/// <inheritdoc />
+public interface IConfluentAvroTypeNameResolver : ISchemaRegistryTypeNameResolver
 {
-    /// <inheritdoc />
-    public interface IConfluentAvroTypeNameResolver : ISchemaRegistryTypeNameResolver
-    {
-    }
 }

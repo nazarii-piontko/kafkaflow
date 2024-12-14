@@ -27,7 +27,7 @@ namespace KafkaFlow.Serializer.SchemaRegistry
         private static string BuildTypeName(FileDescriptorProto protoFields)
         {
             var package = protoFields.Package;
-            if (string.IsNullOrEmpty(package))
+            if (string.IsNullOrEmpty(package) && !string.IsNullOrEmpty(protoFields.Options?.CsharpNamespace))
             {
                 package = protoFields.Options.CsharpNamespace;
             }

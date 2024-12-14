@@ -36,7 +36,10 @@ namespace KafkaFlow.UnitTests.Middlewares.Serialization
             var schemaRegistryClientMock = CreateSchemaRegistryClientMock(p =>
             {
                 p.Package = string.Empty;
-                p.Options.CsharpNamespace = "TestCsharpNamespace";
+                p.Options = new FileOptions
+                {
+                    CsharpNamespace = "TestCsharpNamespace"
+                };
             });
             var resolver = new ConfluentProtobufTypeNameResolver(schemaRegistryClientMock.Object);
 
@@ -45,6 +48,23 @@ namespace KafkaFlow.UnitTests.Middlewares.Serialization
 
             // Assert
             typeName.Should().Be($"TestCsharpNamespace.{MessageTypeName}");
+        }
+        
+        [TestMethod]
+        public async Task ResolveAsync_NoPackageNoOptions_ReturnTypeName()
+        {
+            // Arrange
+            var schemaRegistryClientMock = CreateSchemaRegistryClientMock(p =>
+            {
+                p.Package = string.Empty;
+            });
+            var resolver = new ConfluentProtobufTypeNameResolver(schemaRegistryClientMock.Object);
+
+            // Act
+            var typeName = await resolver.ResolveAsync(1);
+
+            // Assert
+            typeName.Should().Be($".{MessageTypeName}");
         }
 
         private static Mock<ISchemaRegistryClient> CreateSchemaRegistryClientMock(Action<FileDescriptorProto> configure)
@@ -56,9 +76,8 @@ namespace KafkaFlow.UnitTests.Middlewares.Serialization
                     new DescriptorProto
                     {
                         Name = MessageTypeName,
-                    },
-                },
-                Options = new FileOptions(),
+                    }
+                }
             };
             configure(protoFields);
 
